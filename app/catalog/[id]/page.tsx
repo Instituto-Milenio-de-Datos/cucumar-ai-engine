@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { prisma } from "@/lib/prisma";
 import { CRITERIA, type CriteriaField } from "@/lib/criteria";
+import { DeleteConservationObjectButton } from "./delete-conservation-object-button";
 import { EvidenceSection } from "./evidence-section";
 
 // Reads directly via Prisma (no `fetch`) — see app/catalog/page.tsx.
@@ -91,7 +92,7 @@ export default async function ConservationObjectDetailPage({
 
       <EvidenceSection conservationObjectId={id} evidence={evidence} />
 
-      <div>
+      <div className="flex items-center justify-between">
         <Button
           variant="outline"
           render={<Link href={`/api/export-excel/${id}`} />}
@@ -99,6 +100,12 @@ export default async function ConservationObjectDetailPage({
         >
           <DownloadIcon /> Descargar Excel
         </Button>
+
+        <DeleteConservationObjectButton
+          conservationObjectId={id}
+          commonName={conservationObject.commonName}
+          evidenceCount={evidence.length}
+        />
       </div>
     </>
   );

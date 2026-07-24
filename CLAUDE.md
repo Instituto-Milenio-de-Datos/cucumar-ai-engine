@@ -21,13 +21,13 @@ MVP that covers only points 1-5 of the original spec: classify a conservation ob
 Three separate tables, do not merge them:
 - `SeedSpecies` — static seed list of ~50 Chilean marine mammal species (common name ↔ scientific name), read-mostly/admin-maintained.
 - `ConservationObject` — output of Flow 1: a species once classified, with resolved taxonomy. Has `inAnalysis: boolean` and `lastAnalysisDate` fields.
-- `Evidence` — output of Flow 2: one row per paper, FK to `ConservationObject`. `openalexId` has a UNIQUE constraint — this is what makes upsert-based reprocessing safe (no manual locking needed).
+- `Evidence` — output of Flow 2: one row per paper *per species*, FK to `ConservationObject`. `openalexId` is unique per `ConservationObject` (composite `@@unique([conservationObjectId, openalexId])`), NOT globally unique — the same paper can legitimately be evidence for more than one species (e.g. a multi-species survey), so it gets its own row per `ConservationObject` it applies to. This composite key is what makes upsert-based reprocessing safe (no manual locking needed).
 
 Deleting a `ConservationObject` is a hard delete with `onDelete: Cascade` to its `Evidence` rows — no soft delete, no history kept.
 
 ## Flow 2 behavior — read this before touching analyze-evidence
 
-- "Reprocess" = incremental upsert, NOT a full restart. Papers already saved (matched by `openalexId`) are never re-sent to the LLM or re-fetched. Only new papers found in OpenAlex get processed. This is deliberate (avoids wasted API/LLM cost) — do not "simplify" this into a delete-and-reinsert-everything pattern.
+- "Reprocess" = incremental upsert, NOT a full restart. Papers already saved for THIS species (matched by `conservationObjectId` + `openalexId`) are never re-sent to the LLM or re-fetched. Only new papers found in OpenAlex get processed. This is deliberate (avoids wasted API/LLM cost) — do not "simplify" this into a delete-and-reinsert-everything pattern. Note the match is per-species, not global: the same paper showing up for a second species is a new row, not a skip — it's genuinely new evidence for that species.
 - UI copy (in Spanish, see Conventions) must reflect this: button says "Buscar nueva evidencia", not "Reprocesar desde cero".
 - Papers without a clean `openalexId` or with poor metadata (common in 1970s-90s papers) are simply skipped, not force-matched by title/year.
 - Processing is per-paper: each paper is classified and saved to the DB immediately, not batched into one all-or-nothing transaction. If paper 15 of 30 fails, papers 1-14 stay saved.

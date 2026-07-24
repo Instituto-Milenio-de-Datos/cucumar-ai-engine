@@ -52,7 +52,7 @@ export function SpeciesClassificationForm({ options }: { options: SpeciesOption[
   }
 
   return (
-    <div className="flex max-w-md flex-col gap-4">
+    <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-1.5">
         <label htmlFor="species-combobox" className="text-sm font-medium">
           Especie (nombre común)

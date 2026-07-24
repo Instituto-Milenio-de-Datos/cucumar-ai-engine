@@ -59,9 +59,12 @@ model ConservationObject {
 model Evidence {
   id String @id @default(cuid())
 
-  /// Unique per paper. Backs the incremental-upsert reprocessing strategy in Flow 2 —
-  /// papers already matched by this id are never re-sent to the LLM or re-fetched.
-  openalexId String @unique
+  /// Unique per (conservationObject, paper) — NOT globally unique. A single paper can
+  /// legitimately be evidence for more than one species (e.g. a multi-species survey),
+  /// so it needs its own Evidence row per ConservationObject it's relevant to. Backs the
+  /// incremental-upsert reprocessing strategy in Flow 2 — papers already matched by this
+  /// id *for this species* are never re-sent to the LLM or re-fetched (see @@unique below).
+  openalexId String
 
   // --- Metadata (cols K-R, "Metadata" header group) ---
   // Sourced directly from OpenAlex; nullable because upstream metadata quality varies
@@ -76,40 +79,43 @@ model Evidence {
   sourceUrl                String? // col R  "Enlace"
 
   // --- Classification (cols S, U-Y) ---
-  // Computed by the LLM analysis step alongside the contribution matrix below, as part
-  // of the same atomic per-paper save (CLAUDE.md: no partial rows). country/region/commune
-  // stay nullable — not every piece of evidence has a determinable geographic origin.
+  // publicationType/isPubliclyAccessible come straight from OpenAlex metadata (always
+  // available). Everything else in this block is LLM-derived (lib/providers/llm.ts) and
+  // nullable: null means "not yet classified" (no abstract, or classification failed after
+  // retries) — see Evidence.abstractSpanish, which is the same sentinel for "not classified".
+  // Do NOT default these to false; false is a real "no" answer, distinct from "unknown".
   publicationType      String // col S  "Tipo de Publicación"
   country              String? // col U  "País"
   region               String? // col V  "Región " (sic, trailing space in source header)
   commune              String? // col W  "Comuna"
-  isAreaBasedEvidence  Boolean // col X  "Evidencia basada en área (si/no)"
+  isAreaBasedEvidence  Boolean? // col X  "Evidencia basada en área (si/no)"
   isPubliclyAccessible Boolean // col Y  "Acceso Público"
 
   // --- Ecological dimension matrix (cols Z-AJ) ---
-  // Boolean flags: does this evidence contribute to this criterion/subcriterion.
-  // Legend row (row 65 of the sheet) gives the IMMA_* codes noted per field.
-  contributesToImportantAreas           Boolean // col Z  IMMA_A  "A-Área y/o Habitats de importancia para la especie"
-  contributesToDistributionAbundance    Boolean // col AA IMMA_B  "B_Distribución, abundancia y avistamientos"
-  contributesToSmallResidentPopulations Boolean // col AB IMMA_B1 "B1_Poblaciones pequeñas y residentes"
-  contributesToAggregations             Boolean // col AC IMMA_B2 "B2_Agregaciones"
-  contributesToKeyLifeCycleActivities   Boolean // col AD IMMA_C  "C-Actividades Clave en el Ciclo de Vida "
-  contributesToBreedingAreas            Boolean // col AE IMMA_C1 "C1-Áreas de reproducción"
-  contributesToFeedingAreas             Boolean // col AF IMMA_C2 "C2-Áreas de Alimentación"
-  contributesToMigratoryRoutes          Boolean // col AG IMMA_C3 "C3-Rutas Migratorias y Movimientos "
-  contributesToSpecialAttributes        Boolean // col AH IMMA_D  "D-Atributos Especiales"
-  contributesToDistinctiveFeatures      Boolean // col AI IMMA_D1 "D1-Distinciones"
+  // Boolean flags: does this evidence contribute to this criterion/subcriterion. Nullable —
+  // see the note above the Classification block. Legend row (row 65 of the sheet) gives the
+  // IMMA_* codes noted per field.
+  contributesToImportantAreas           Boolean? // col Z  IMMA_A  "A-Área y/o Habitats de importancia para la especie"
+  contributesToDistributionAbundance    Boolean? // col AA IMMA_B  "B_Distribución, abundancia y avistamientos"
+  contributesToSmallResidentPopulations Boolean? // col AB IMMA_B1 "B1_Poblaciones pequeñas y residentes"
+  contributesToAggregations             Boolean? // col AC IMMA_B2 "B2_Agregaciones"
+  contributesToKeyLifeCycleActivities   Boolean? // col AD IMMA_C  "C-Actividades Clave en el Ciclo de Vida "
+  contributesToBreedingAreas            Boolean? // col AE IMMA_C1 "C1-Áreas de reproducción"
+  contributesToFeedingAreas             Boolean? // col AF IMMA_C2 "C2-Áreas de Alimentación"
+  contributesToMigratoryRoutes          Boolean? // col AG IMMA_C3 "C3-Rutas Migratorias y Movimientos "
+  contributesToSpecialAttributes        Boolean? // col AH IMMA_D  "D-Atributos Especiales"
+  contributesToDistinctiveFeatures      Boolean? // col AI IMMA_D1 "D1-Distinciones"
   // Source legend jumps from IMMA_D1 straight to IMMA_D3 — there is no "D2" column in the sheet.
-  contributesToConnectivity             Boolean // col AJ IMMA_D3 "D3-Conectividad"
+  contributesToConnectivity             Boolean? // col AJ IMMA_D3 "D3-Conectividad"
 
   // --- Threats dimension matrix (cols AK-AQ) ---
-  contributesToThreatsGeneral         Boolean // col AK Criterio_Amenazas "Amenazas gal" (sic, typo for "gral"/general)
-  contributesToClimateChangeThreat    Boolean // col AL CLIMATE_CHANGE "Cambio Climático"
-  contributesToHabitatLossThreat      Boolean // col AM HABITAT_LOSS_AND_COMPETENCE_FOR_SPACE_USE "Pérdida y/o competencia por uso  de hábitat"
-  contributesToInvasiveSpeciesThreat  Boolean // col AN INVASIVE_OR_EXOTIC_SPECIES "Especies Invasoras"
-  contributesToOverexploitationThreat Boolean // col AO OVEREXPLOTATION_AND_BYCATCH "Sobrexplotación o captira incidental"
-  contributesToPollutionThreat        Boolean // col AP CONTAMINATION "Contaminación"
-  contributesToOtherThreats           Boolean // col AQ OTHERS "Otros"
+  contributesToThreatsGeneral         Boolean? // col AK Criterio_Amenazas "Amenazas gal" (sic, typo for "gral"/general)
+  contributesToClimateChangeThreat    Boolean? // col AL CLIMATE_CHANGE "Cambio Climático"
+  contributesToHabitatLossThreat      Boolean? // col AM HABITAT_LOSS_AND_COMPETENCE_FOR_SPACE_USE "Pérdida y/o competencia por uso  de hábitat"
+  contributesToInvasiveSpeciesThreat  Boolean? // col AN INVASIVE_OR_EXOTIC_SPECIES "Especies Invasoras"
+  contributesToOverexploitationThreat Boolean? // col AO OVEREXPLOTATION_AND_BYCATCH "Sobrexplotación o captira incidental"
+  contributesToPollutionThreat        Boolean? // col AP CONTAMINATION "Contaminación"
+  contributesToOtherThreats           Boolean? // col AQ OTHERS "Otros"
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -117,5 +123,5 @@ model Evidence {
   conservationObjectId String
   conservationObject   ConservationObject @relation(fields: [conservationObjectId], references: [id], onDelete: Cascade)
 
-  @@index([conservationObjectId])
+  @@unique([conservationObjectId, openalexId])
 }

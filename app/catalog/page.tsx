@@ -31,7 +31,7 @@ export default async function CatalogPage() {
   });
 
   return (
-    <main className="mx-auto flex max-w-4xl flex-col gap-6 p-8">
+    <>
       <div className="flex items-center justify-between">
         <div className="flex flex-col gap-1">
           <h1 className="text-xl font-semibold">Catálogo</h1>
@@ -92,6 +92,6 @@ export default async function CatalogPage() {
           </TableBody>
         </Table>
       )}
-    </main>
+    </>
   );
 }

@@ -5,6 +5,11 @@ import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { prisma } from "@/lib/prisma";
+import { CRITERIA, type CriteriaField } from "@/lib/criteria";
+import { EvidenceSection } from "./evidence-section";
+
+// Reads directly via Prisma (no `fetch`) — see app/catalog/page.tsx.
+export const dynamic = "force-dynamic";
 
 const TAXONOMY_FIELDS = [
   { label: "Reino", key: "kingdom" },
@@ -15,6 +20,11 @@ const TAXONOMY_FIELDS = [
   { label: "Género", key: "genus" },
   { label: "Especie", key: "species" },
 ] as const;
+
+const CRITERIA_SELECT = Object.fromEntries(CRITERIA.map(({ field }) => [field, true])) as Record<
+  CriteriaField,
+  true
+>;
 
 export default async function ConservationObjectDetailPage({
   params,
@@ -28,8 +38,28 @@ export default async function ConservationObjectDetailPage({
     notFound();
   }
 
+  const evidence = await prisma.evidence.findMany({
+    where: { conservationObjectId: id },
+    orderBy: [{ year: "desc" }, { createdAt: "desc" }],
+    select: {
+      id: true,
+      title: true,
+      year: true,
+      authors: true,
+      journal: true,
+      publicationType: true,
+      isPubliclyAccessible: true,
+      abstractOriginalLanguage: true,
+      abstractSpanish: true,
+      country: true,
+      region: true,
+      sourceUrl: true,
+      ...CRITERIA_SELECT,
+    },
+  });
+
   return (
-    <main className="mx-auto flex max-w-3xl flex-col gap-8 p-8">
+    <>
       <Button
         variant="ghost"
         size="sm"
@@ -59,19 +89,13 @@ export default async function ConservationObjectDetailPage({
         </dl>
       </section>
 
-      {/* Placeholders for later phases — not implemented yet. */}
-      <section className="flex flex-col gap-3 rounded-lg border border-dashed p-6">
-        <h2 className="text-sm font-medium text-muted-foreground">Evidencia</h2>
-        <p className="text-sm text-muted-foreground">
-          La tabla de evidencia (Flujo 2) aparecerá acá en una fase posterior.
-        </p>
-      </section>
+      <EvidenceSection conservationObjectId={id} evidence={evidence} />
 
+      {/* Placeholders for later phases — not implemented yet. */}
       <section className="flex flex-wrap gap-2 rounded-lg border border-dashed p-6">
-        <Badge variant="outline">Buscar nueva evidencia — próximamente</Badge>
         <Badge variant="outline">Descargar Excel — próximamente</Badge>
         <Badge variant="outline">Eliminar — próximamente</Badge>
       </section>
-    </main>
+    </>
   );
 }

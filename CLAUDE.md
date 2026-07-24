@@ -20,7 +20,7 @@ MVP that covers only points 1-5 of the original spec: classify a conservation ob
 
 Three separate tables, do not merge them:
 - `SeedSpecies` — static seed list of ~50 Chilean marine mammal species (common name ↔ scientific name), read-mostly/admin-maintained.
-- `ConservationObject` — output of Flow 1: a species once classified, with resolved taxonomy. Has `enAnalisis: boolean` and `ultimaFechaAnalisis` fields.
+- `ConservationObject` — output of Flow 1: a species once classified, with resolved taxonomy. Has `inAnalysis: boolean` and `lastAnalysisDate` fields.
 - `Evidence` — output of Flow 2: one row per paper, FK to `ConservationObject`. `openalexId` has a UNIQUE constraint — this is what makes upsert-based reprocessing safe (no manual locking needed).
 
 Deleting a `ConservationObject` is a hard delete with `onDelete: Cascade` to its `Evidence` rows — no soft delete, no history kept.
@@ -33,7 +33,7 @@ Deleting a `ConservationObject` is a hard delete with `onDelete: Cascade` to its
 - Processing is per-paper: each paper is classified and saved to the DB immediately, not batched into one all-or-nothing transaction. If paper 15 of 30 fails, papers 1-14 stay saved.
 - Simple retry (2 attempts, short backoff) per paper on transient errors. After that, skip and log; report a summary count to the UI at the end ("28/30 processed, 2 failed").
 - Processing is currently SYNCHRONOUS (the HTTP request stays open until done, ~20-40s). This was a deliberate choice over a job+polling pattern to avoid the cost/complexity of "CPU always allocated" on Cloud Run for a low-traffic prototype. Do not add a jobs table/polling unless explicitly asked — it's a known, deferred upgrade, not an oversight.
-- Before starting analysis, check `enAnalisis` on the `ConservationObject`; if true, block and tell the user an analysis is already running. This is the entire concurrency strategy — no distributed locks needed.
+- Before starting analysis, check `inAnalysis` on the `ConservationObject`; if true, block and tell the user an analysis is already running. This is the entire concurrency strategy — no distributed locks needed.
 
 ## Excel export
 

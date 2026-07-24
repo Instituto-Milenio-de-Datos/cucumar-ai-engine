@@ -1,8 +1,6 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client"
   output   = "../lib/generated/prisma"
@@ -10,4 +8,114 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+}
+
+/// Static seed list of Chilean marine mammal species (docs/reference/seed-species.csv).
+/// Read-mostly/admin-maintained — not written to by the expert-facing Flow 1/Flow 2 pipeline.
+model SeedSpecies {
+  id             String   @id @default(cuid())
+  commonName     String
+  scientificName String   @unique
+  createdAt      DateTime @default(now())
+}
+
+/// Output of Flow 1: a species once classified, with resolved taxonomy.
+/// Column mapping below refers to docs/reference/1_Tabla_DB.xlsx (header spans rows 2-4).
+model ConservationObject {
+  id String @id @default(cuid())
+
+  commonName       String // col B  "Ingreso OC"
+  // Currently always "Mamíferos marinos" — set by application code (docs/reference categories),
+  // never hardcoded at the schema/DB level.
+  analysisCategory String // col C  "Establecido Por CuCuMar" / "Grupo de Análisis"
+
+  kingdom String // col D  "Reino"
+  phylum  String // col E  "filo"
+  class   String // col F  "Clase"
+  order   String // col G  "Orden"
+  family  String // col H  "Familia"
+  genus   String // col I  "Genero"
+  // Full scientific binomial (Genus + species), matching the source spreadsheet
+  // and spec-original.md's own example ("Especie: Lontra felina"), not just the epithet.
+  species String // col J  "Especie"
+
+  inAnalysis       Boolean   @default(false)
+  lastAnalysisDate DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  evidence Evidence[]
+}
+
+/// Output of Flow 2: one row per paper. Field comments map 1:1 to the exact column
+/// header text (and, for the matrix columns, the internal code from the legend row
+/// at the bottom of the sheet) in docs/reference/1_Tabla_DB.xlsx — needed verbatim
+/// for the Fase 4 Excel export.
+///
+/// "Robustez toma de decisiones" (col T, LoE / Mupepele 2016) is intentionally NOT
+/// modeled here: per CLAUDE.md it is left blank at export time with a header cell
+/// comment ("No evaluado en este MVP"), never computed or stored in this MVP.
+model Evidence {
+  id String @id @default(cuid())
+
+  /// Unique per paper. Backs the incremental-upsert reprocessing strategy in Flow 2 —
+  /// papers already matched by this id are never re-sent to the LLM or re-fetched.
+  openalexId String @unique
+
+  // --- Metadata (cols K-R, "Metadata" header group) ---
+  // Sourced directly from OpenAlex; nullable because upstream metadata quality varies
+  // (older papers in particular — see CLAUDE.md's note on 1970s-90s records).
+  year                     Int? // col K  "Año"
+  authors                  String? // col L  "Autor@s"
+  title                    String // col M  "Título"
+  keywords                 String? // col N  "Palabras clave"
+  journal                  String? // col O  "Revista"
+  abstractOriginalLanguage String? // col P  "Resumen idioma original"
+  abstractSpanish          String? // col Q  "Resuen en español" (sic, typo in source header)
+  sourceUrl                String? // col R  "Enlace"
+
+  // --- Classification (cols S, U-Y) ---
+  // Computed by the LLM analysis step alongside the contribution matrix below, as part
+  // of the same atomic per-paper save (CLAUDE.md: no partial rows). country/region/commune
+  // stay nullable — not every piece of evidence has a determinable geographic origin.
+  publicationType      String // col S  "Tipo de Publicación"
+  country              String? // col U  "País"
+  region               String? // col V  "Región " (sic, trailing space in source header)
+  commune              String? // col W  "Comuna"
+  isAreaBasedEvidence  Boolean // col X  "Evidencia basada en área (si/no)"
+  isPubliclyAccessible Boolean // col Y  "Acceso Público"
+
+  // --- Ecological dimension matrix (cols Z-AJ) ---
+  // Boolean flags: does this evidence contribute to this criterion/subcriterion.
+  // Legend row (row 65 of the sheet) gives the IMMA_* codes noted per field.
+  contributesToImportantAreas           Boolean // col Z  IMMA_A  "A-Área y/o Habitats de importancia para la especie"
+  contributesToDistributionAbundance    Boolean // col AA IMMA_B  "B_Distribución, abundancia y avistamientos"
+  contributesToSmallResidentPopulations Boolean // col AB IMMA_B1 "B1_Poblaciones pequeñas y residentes"
+  contributesToAggregations             Boolean // col AC IMMA_B2 "B2_Agregaciones"
+  contributesToKeyLifeCycleActivities   Boolean // col AD IMMA_C  "C-Actividades Clave en el Ciclo de Vida "
+  contributesToBreedingAreas            Boolean // col AE IMMA_C1 "C1-Áreas de reproducción"
+  contributesToFeedingAreas             Boolean // col AF IMMA_C2 "C2-Áreas de Alimentación"
+  contributesToMigratoryRoutes          Boolean // col AG IMMA_C3 "C3-Rutas Migratorias y Movimientos "
+  contributesToSpecialAttributes        Boolean // col AH IMMA_D  "D-Atributos Especiales"
+  contributesToDistinctiveFeatures      Boolean // col AI IMMA_D1 "D1-Distinciones"
+  // Source legend jumps from IMMA_D1 straight to IMMA_D3 — there is no "D2" column in the sheet.
+  contributesToConnectivity             Boolean // col AJ IMMA_D3 "D3-Conectividad"
+
+  // --- Threats dimension matrix (cols AK-AQ) ---
+  contributesToThreatsGeneral         Boolean // col AK Criterio_Amenazas "Amenazas gal" (sic, typo for "gral"/general)
+  contributesToClimateChangeThreat    Boolean // col AL CLIMATE_CHANGE "Cambio Climático"
+  contributesToHabitatLossThreat      Boolean // col AM HABITAT_LOSS_AND_COMPETENCE_FOR_SPACE_USE "Pérdida y/o competencia por uso  de hábitat"
+  contributesToInvasiveSpeciesThreat  Boolean // col AN INVASIVE_OR_EXOTIC_SPECIES "Especies Invasoras"
+  contributesToOverexploitationThreat Boolean // col AO OVEREXPLOTATION_AND_BYCATCH "Sobrexplotación o captira incidental"
+  contributesToPollutionThreat        Boolean // col AP CONTAMINATION "Contaminación"
+  contributesToOtherThreats           Boolean // col AQ OTHERS "Otros"
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  conservationObjectId String
+  conservationObject   ConservationObject @relation(fields: [conservationObjectId], references: [id], onDelete: Cascade)
+
+  @@index([conservationObjectId])
 }

@@ -14,7 +14,7 @@ MVP that covers only points 1-5 of the original spec: classify a conservation ob
 - Prisma + Postgres. Local dev via Docker Compose; production target is Cloud SQL on GCP (not set up yet).
 - shadcn/ui + Tailwind for components.
 - Route Handlers (`app/api/**/route.ts`) for ALL mutations — do not use Server Actions. Reason: future periodic-monitoring feature needs to trigger analysis from outside the browser (cron), and Route Handlers are easier to test with curl/Postman during development.
-- External integrations live ONLY behind `src/lib/providers/`: `taxonomy.ts` (GBIF/WoRMS), `evidence.ts` (OpenAlex), `llm.ts` (OpenAI). Nothing else in the codebase calls these APIs directly — this is intentional so any of the three can be swapped later without touching the rest of the pipeline.
+- External integrations live ONLY behind `lib/providers/`: `taxonomy.ts` (GBIF/WoRMS), `evidence.ts` (OpenAlex), `llm.ts` (OpenAI). Nothing else in the codebase calls these APIs directly — this is intentional so any of the three can be swapped later without touching the rest of the pipeline. (No `src/` dir in this project — `lib/` lives at the repo root.)
 
 ## Data model (conceptual)
 

@@ -41,7 +41,7 @@ Primero decide "isUsableAbstract":
 Si "isUsableAbstract" es true, devuelve EXCLUSIVAMENTE lo que el resumen realmente respalda — no inventes ni asumas información que no esté en el texto:
 1. "abstractSpanish": traduce/resume el resumen al español de forma fiel y completa (no lo acortes artificialmente).
 2. "isAreaBasedEvidence": true si el resumen describe evidencia levantada en un área geográfica concreta (ej. un sitio, bahía, región específica), false si es evidencia general/no ligada a un lugar.
-3. "country"/"region"/"commune": si el resumen menciona explícitamente dónde se levantó la evidencia, extrae país/región/comuna (usa la división administrativa de Chile cuando aplique). Si no se puede determinar con confianza, usa null — no adivines.
+3. "country"/"region"/"commune": si el resumen menciona explícitamente dónde se levantó la evidencia, extrae país/región/comuna (usa la división administrativa de Chile cuando aplique). Si no se puede determinar con confianza, usa el valor null del campo — no adivines, y no escribas la palabra "null" como texto.
 4. Para cada uno de los siguientes criterios y subcriterios de evaluación, responde true solo si el resumen aporta evidencia relacionada a ese criterio específico, false en caso contrario:
 
 ${CRITERIA.map(({ field, label }) => `- ${field}: ${label}`).join("\n")}`;
@@ -92,6 +92,16 @@ function getClient(): OpenAI {
   return client;
 }
 
+// Despite the schema allowing real `null` and the prompt saying "usa null",
+// models inconsistently write the literal string "null" for a nullable field
+// instead of the JSON null value. Confirmed in production data across
+// country/region/commune. Normalize it away rather than storing junk text.
+function normalizeNullableString(value: string | null): string | null {
+  if (value === null) return null;
+  const trimmed = value.trim();
+  return trimmed && !/^(null|n\/?a|none)$/i.test(trimmed) ? value : null;
+}
+
 export async function classifyEvidence(abstract: string): Promise<EvidenceClassification> {
   const model = process.env.OPENAI_MODEL || DEFAULT_MODEL;
 
@@ -109,5 +119,12 @@ export async function classifyEvidence(abstract: string): Promise<EvidenceClassi
     throw new Error("OpenAI returned an empty classification response.");
   }
 
-  return JSON.parse(content) as EvidenceClassification;
+  const result = JSON.parse(content) as EvidenceClassification;
+
+  return {
+    ...result,
+    country: normalizeNullableString(result.country),
+    region: normalizeNullableString(result.region),
+    commune: normalizeNullableString(result.commune),
+  };
 }

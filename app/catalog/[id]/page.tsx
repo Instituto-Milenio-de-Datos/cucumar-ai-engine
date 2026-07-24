@@ -1,4 +1,4 @@
-import { ArrowLeftIcon } from "lucide-react";
+import { ArrowLeftIcon, DownloadIcon } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -91,11 +91,15 @@ export default async function ConservationObjectDetailPage({
 
       <EvidenceSection conservationObjectId={id} evidence={evidence} />
 
-      {/* Placeholders for later phases — not implemented yet. */}
-      <section className="flex flex-wrap gap-2 rounded-lg border border-dashed p-6">
-        <Badge variant="outline">Descargar Excel — próximamente</Badge>
-        <Badge variant="outline">Eliminar — próximamente</Badge>
-      </section>
+      <div>
+        <Button
+          variant="outline"
+          render={<Link href={`/api/export-excel/${id}`} />}
+          nativeButton={false}
+        >
+          <DownloadIcon /> Descargar Excel
+        </Button>
+      </div>
     </>
   );
 }

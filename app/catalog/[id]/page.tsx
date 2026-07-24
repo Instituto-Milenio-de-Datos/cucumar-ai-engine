@@ -7,13 +7,13 @@ import { Button } from "@/components/ui/button";
 import { prisma } from "@/lib/prisma";
 
 const TAXONOMY_FIELDS = [
-  { label: "Kingdom", key: "kingdom" },
-  { label: "Phylum", key: "phylum" },
-  { label: "Class", key: "class" },
-  { label: "Order", key: "order" },
-  { label: "Family", key: "family" },
-  { label: "Genus", key: "genus" },
-  { label: "Species", key: "species" },
+  { label: "Reino", key: "kingdom" },
+  { label: "Filo", key: "phylum" },
+  { label: "Clase", key: "class" },
+  { label: "Orden", key: "order" },
+  { label: "Familia", key: "family" },
+  { label: "Género", key: "genus" },
+  { label: "Especie", key: "species" },
 ] as const;
 
 export default async function ConservationObjectDetailPage({
@@ -37,7 +37,7 @@ export default async function ConservationObjectDetailPage({
         render={<Link href="/catalog" />}
         nativeButton={false}
       >
-        <ArrowLeftIcon /> Back to catalog
+        <ArrowLeftIcon /> Volver al catálogo
       </Button>
 
       <div className="flex flex-col gap-2">
@@ -48,7 +48,7 @@ export default async function ConservationObjectDetailPage({
       </div>
 
       <section className="flex flex-col gap-3">
-        <h2 className="text-sm font-medium text-muted-foreground">Taxonomy</h2>
+        <h2 className="text-sm font-medium text-muted-foreground">Taxonomía</h2>
         <dl className="grid grid-cols-2 gap-x-8 gap-y-4 rounded-lg border p-4 sm:grid-cols-3">
           {TAXONOMY_FIELDS.map(({ label, key }) => (
             <div key={key} className="flex flex-col gap-0.5">
@@ -61,16 +61,16 @@ export default async function ConservationObjectDetailPage({
 
       {/* Placeholders for later phases — not implemented yet. */}
       <section className="flex flex-col gap-3 rounded-lg border border-dashed p-6">
-        <h2 className="text-sm font-medium text-muted-foreground">Evidence</h2>
+        <h2 className="text-sm font-medium text-muted-foreground">Evidencia</h2>
         <p className="text-sm text-muted-foreground">
-          The evidence table (Flow 2) will appear here in a later phase.
+          La tabla de evidencia (Flujo 2) aparecerá acá en una fase posterior.
         </p>
       </section>
 
       <section className="flex flex-wrap gap-2 rounded-lg border border-dashed p-6">
-        <Badge variant="outline">Search new evidence — coming soon</Badge>
-        <Badge variant="outline">Download Excel — coming soon</Badge>
-        <Badge variant="outline">Delete — coming soon</Badge>
+        <Badge variant="outline">Buscar nueva evidencia — próximamente</Badge>
+        <Badge variant="outline">Descargar Excel — próximamente</Badge>
+        <Badge variant="outline">Eliminar — próximamente</Badge>
       </section>
     </main>
   );

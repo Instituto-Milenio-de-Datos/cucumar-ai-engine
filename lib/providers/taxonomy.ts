@@ -150,25 +150,25 @@ export async function resolveTaxonomy(scientificName: string): Promise<ResolvedT
   try {
     const gbifResult = await matchGbif(scientificName);
     if (gbifResult) return gbifResult;
-    failures.push("GBIF found no match");
+    failures.push("GBIF no encontró coincidencias");
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.error(JSON.stringify({ event: "taxonomy.gbif_error", scientificName, error: message }));
-    failures.push(`GBIF request failed (${message})`);
+    failures.push(`la solicitud a GBIF falló (${message})`);
   }
 
   try {
     const wormsResult = await matchWorms(scientificName);
     if (wormsResult) return wormsResult;
-    failures.push("WoRMS found no match");
+    failures.push("WoRMS no encontró coincidencias");
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.error(JSON.stringify({ event: "taxonomy.worms_error", scientificName, error: message }));
-    failures.push(`WoRMS request failed (${message})`);
+    failures.push(`la solicitud a WoRMS falló (${message})`);
   }
 
   throw new TaxonomyResolutionError(
-    `Could not resolve taxonomy for "${scientificName}": ${failures.join("; ")}.`,
+    `No se pudo resolver la taxonomía de "${scientificName}": ${failures.join("; ")}.`,
     scientificName,
   );
 }

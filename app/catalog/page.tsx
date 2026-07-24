@@ -34,34 +34,34 @@ export default async function CatalogPage() {
     <main className="mx-auto flex max-w-4xl flex-col gap-6 p-8">
       <div className="flex items-center justify-between">
         <div className="flex flex-col gap-1">
-          <h1 className="text-xl font-semibold">Catalog</h1>
+          <h1 className="text-xl font-semibold">Catálogo</h1>
           <p className="text-sm text-muted-foreground">
-            Conservation objects classified so far.
+            Objetos de Conservación clasificados hasta ahora.
           </p>
         </div>
         <Button render={<Link href="/catalog/new" />} nativeButton={false}>
-          Add species
+          Agregar especie
         </Button>
       </div>
 
       {conservationObjects.length === 0 ? (
         <div className="flex flex-col items-center gap-4 rounded-lg border border-dashed p-16 text-center">
           <p className="text-sm text-muted-foreground">
-            No conservation objects have been classified yet.
+            Todavía no se ha clasificado ningún Objeto de Conservación.
           </p>
           <Button render={<Link href="/catalog/new" />} nativeButton={false}>
-            Add species
+            Agregar especie
           </Button>
         </div>
       ) : (
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Common name</TableHead>
-              <TableHead>Scientific name</TableHead>
-              <TableHead>Analysis category</TableHead>
-              <TableHead>Last analysis date</TableHead>
-              <TableHead className="text-right">Details</TableHead>
+              <TableHead>Nombre común</TableHead>
+              <TableHead>Nombre científico</TableHead>
+              <TableHead>Categoría de análisis</TableHead>
+              <TableHead>Última fecha de análisis</TableHead>
+              <TableHead className="text-right">Detalle</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -84,7 +84,7 @@ export default async function CatalogPage() {
                     render={<Link href={`/catalog/${conservationObject.id}`} />}
                     nativeButton={false}
                   >
-                    Details
+                    Ver detalle
                   </Button>
                 </TableCell>
               </TableRow>

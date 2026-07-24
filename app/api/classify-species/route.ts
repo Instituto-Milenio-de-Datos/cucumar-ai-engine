@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json({ error: "Request body must be valid JSON." }, { status: 400 });
+    return NextResponse.json({ error: "El cuerpo de la solicitud debe ser JSON válido." }, { status: 400 });
   }
 
   const scientificName =
@@ -21,13 +21,13 @@ export async function POST(request: NextRequest) {
       : "";
 
   if (!scientificName) {
-    return NextResponse.json({ error: "scientificName is required." }, { status: 400 });
+    return NextResponse.json({ error: "Debes indicar un nombre científico (scientificName)." }, { status: 400 });
   }
 
   const seedSpecies = await prisma.seedSpecies.findUnique({ where: { scientificName } });
   if (!seedSpecies) {
     return NextResponse.json(
-      { error: `"${scientificName}" is not in the seed species list.` },
+      { error: `"${scientificName}" no corresponde a ninguna especie de la lista.` },
       { status: 404 },
     );
   }
@@ -36,7 +36,8 @@ export async function POST(request: NextRequest) {
   try {
     taxonomy = await resolveTaxonomy(scientificName);
   } catch (error) {
-    const message = error instanceof TaxonomyResolutionError ? error.message : "Taxonomy resolution failed.";
+    const message =
+      error instanceof TaxonomyResolutionError ? error.message : "No se pudo resolver la taxonomía.";
     console.error(
       JSON.stringify({ event: "classify_species.taxonomy_failed", scientificName, error: message }),
     );

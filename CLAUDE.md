@@ -28,7 +28,7 @@ Deleting a `ConservationObject` is a hard delete with `onDelete: Cascade` to its
 ## Flow 2 behavior — read this before touching analyze-evidence
 
 - "Reprocess" = incremental upsert, NOT a full restart. Papers already saved (matched by `openalexId`) are never re-sent to the LLM or re-fetched. Only new papers found in OpenAlex get processed. This is deliberate (avoids wasted API/LLM cost) — do not "simplify" this into a delete-and-reinsert-everything pattern.
-- UI copy must reflect this: button says "Search new evidence", not "Re-analyze from scratch".
+- UI copy (in Spanish, see Conventions) must reflect this: button says "Buscar nueva evidencia", not "Reprocesar desde cero".
 - Papers without a clean `openalexId` or with poor metadata (common in 1970s-90s papers) are simply skipped, not force-matched by title/year.
 - Processing is per-paper: each paper is classified and saved to the DB immediately, not batched into one all-or-nothing transaction. If paper 15 of 30 fails, papers 1-14 stay saved.
 - Simple retry (2 attempts, short backoff) per paper on transient errors. After that, skip and log; report a summary count to the UI at the end ("28/30 processed, 2 failed").
@@ -48,7 +48,7 @@ Deleting a `ConservationObject` is a hard delete with `onDelete: Cascade` to its
 
 ## Conventions
 
-- All code, file names, folder names, identifiers: English.
+- All code, file names, folder names, identifiers: English. All user-facing UI copy (labels, headings, button text, error messages shown to the user): Spanish. API error messages returned in JSON bodies are user-facing too (they get rendered directly in the UI) and follow the same rule; server-side `console.log`/`console.error` payloads stay in English since those are ops/Cloud Logging facing, not shown to users.
 - UI navigation is a single catalog view (list of classified conservation objects + "add species" action) with drill-down to a detail view per object (taxonomy, evidence table, download Excel, reprocess, delete). Not separate pages per flow.
 - Each Route Handler must check auth/permissions itself once auth exists — never assume protection is inherited from the page that calls it (not implemented yet, but keep handlers structured so this is easy to add).
 

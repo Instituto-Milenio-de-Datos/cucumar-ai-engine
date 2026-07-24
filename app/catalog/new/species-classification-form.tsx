@@ -41,12 +41,12 @@ export function SpeciesClassificationForm({ options }: { options: SpeciesOption[
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error ?? `Request failed with status ${response.status}.`);
+        throw new Error(data.error ?? `La solicitud falló con estado ${response.status}.`);
       }
 
       router.push(`/catalog/${data.id}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unexpected error.");
+      setError(err instanceof Error ? err.message : "Ocurrió un error inesperado.");
       setIsSubmitting(false);
     }
   }
@@ -55,12 +55,12 @@ export function SpeciesClassificationForm({ options }: { options: SpeciesOption[
     <div className="flex max-w-md flex-col gap-4">
       <div className="flex flex-col gap-1.5">
         <label htmlFor="species-combobox" className="text-sm font-medium">
-          Species (common name)
+          Especie (nombre común)
         </label>
         <Combobox items={options} value={selected} onValueChange={setSelected}>
-          <ComboboxInput id="species-combobox" placeholder="e.g. Chungungo" />
+          <ComboboxInput id="species-combobox" placeholder="Ej: Chungungo" />
           <ComboboxContent>
-            <ComboboxEmpty>No species found.</ComboboxEmpty>
+            <ComboboxEmpty>No se encontraron especies.</ComboboxEmpty>
             <ComboboxList>
               {(item: SpeciesOption) => (
                 <ComboboxItem key={item.value} value={item}>
@@ -86,7 +86,7 @@ export function SpeciesClassificationForm({ options }: { options: SpeciesOption[
 
       <Button onClick={handleSubmit} disabled={!selected || isSubmitting}>
         {isSubmitting && <Loader2Icon className="animate-spin" />}
-        {isSubmitting ? "Classifying..." : "Classify species"}
+        {isSubmitting ? "Clasificando..." : "Clasificar especie"}
       </Button>
     </div>
   );

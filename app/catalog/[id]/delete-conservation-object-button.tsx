@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2Icon, Trash2Icon } from "lucide-react";
+import { CircleAlertIcon, Loader2Icon, Trash2Icon } from "lucide-react";
 
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -82,12 +83,10 @@ export function DeleteConservationObjectButton({
         </AlertDialogHeader>
 
         {error && (
-          <div
-            role="alert"
-            className="rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive"
-          >
-            {error}
-          </div>
+          <Alert variant="destructive">
+            <CircleAlertIcon />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
         )}
 
         <AlertDialogFooter>

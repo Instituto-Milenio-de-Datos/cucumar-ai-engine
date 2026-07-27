@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   ChevronDownIcon,
   ChevronRightIcon,
+  CircleAlertIcon,
   ExternalLinkIcon,
   InfoIcon,
   Loader2Icon,
@@ -95,30 +96,31 @@ export function EvidenceSection({
         <h2 className="text-sm font-medium text-muted-foreground">Evidencia</h2>
         <Button size="sm" onClick={handleSearch} disabled={isSearching}>
           {isSearching ? <Loader2Icon className="animate-spin" /> : <SearchIcon />}
-          {isSearching ? "Buscando evidencia..." : "Buscar evidencia nueva"}
+          {isSearching ? "Buscando evidencia..." : "Buscar evidencia"}
         </Button>
       </div>
 
       {error && (
-        <div
-          role="alert"
-          className="rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive"
-        >
-          {error}
-        </div>
+        <Alert variant="destructive">
+          <CircleAlertIcon />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       )}
 
       {summary && (
-        <div className="rounded-md border border-border bg-muted/50 p-3 text-sm">
-          {summary.totalFound} encontrados en OpenAlex, {summary.new} nuevos — {summary.classified}{" "}
-          clasificados, {summary.savedWithoutClassification} guardados sin clasificar.
-        </div>
+        <Alert>
+          <InfoIcon />
+          <AlertDescription>
+            {summary.totalFound} encontrados en OpenAlex, {summary.new} nuevos — {summary.classified}{" "}
+            clasificados, {summary.savedWithoutClassification} guardados sin clasificar.
+          </AlertDescription>
+        </Alert>
       )}
 
       {evidence.length === 0 ? (
         <p className="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
           Todavía no hay evidencia para este Objeto de Conservación. Usa &quot;Buscar evidencia
-          nueva&quot; para consultar OpenAlex.
+          &quot; para consultar OpenAlex.
         </p>
       ) : (
         <Table className="table-fixed">

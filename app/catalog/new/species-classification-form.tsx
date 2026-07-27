@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2Icon } from "lucide-react";
+import { CircleAlertIcon, Loader2Icon } from "lucide-react";
 
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
   Combobox,
@@ -76,12 +77,10 @@ export function SpeciesClassificationForm({ options }: { options: SpeciesOption[
       </div>
 
       {error && (
-        <div
-          role="alert"
-          className="rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive"
-        >
-          {error}
-        </div>
+        <Alert variant="destructive">
+          <CircleAlertIcon />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       )}
 
       <Button onClick={handleSubmit} disabled={!selected || isSubmitting}>

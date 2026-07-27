@@ -6,10 +6,13 @@ import {
   ChevronDownIcon,
   ChevronRightIcon,
   ExternalLinkIcon,
+  InfoIcon,
   Loader2Icon,
   SearchIcon,
+  TriangleAlertIcon,
 } from "lucide-react";
 
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -118,14 +121,14 @@ export function EvidenceSection({
           nueva&quot; para consultar OpenAlex.
         </p>
       ) : (
-        <Table>
+        <Table className="table-fixed">
           <TableHeader>
             <TableRow>
               <TableHead className="w-6" />
-              <TableHead>Título</TableHead>
+              <TableHead className="w-[220px]">Título</TableHead>
               <TableHead className="w-14">Año</TableHead>
-              <TableHead>Autores</TableHead>
-              <TableHead>Revista</TableHead>
+              <TableHead className="w-[140px]">Autores</TableHead>
+              <TableHead className="w-[140px]">Revista</TableHead>
               <TableHead className="w-28">Acceso público</TableHead>
               <TableHead>Resumen</TableHead>
             </TableRow>
@@ -150,20 +153,18 @@ export function EvidenceSection({
                         <ChevronRightIcon className="size-4 text-muted-foreground" />
                       )}
                     </TableCell>
-                    <TableCell className="max-w-[220px] truncate font-medium">{item.title}</TableCell>
+                    <TableCell className="truncate font-medium">{item.title}</TableCell>
                     <TableCell>{item.year ?? "—"}</TableCell>
-                    <TableCell className="max-w-[140px] truncate text-muted-foreground">
+                    <TableCell className="truncate text-muted-foreground">
                       {item.authors ?? "—"}
                     </TableCell>
-                    <TableCell className="max-w-[140px] truncate text-muted-foreground">
+                    <TableCell className="truncate text-muted-foreground">
                       {item.journal ?? "—"}
                     </TableCell>
                     <TableCell>
-                      <Badge variant={item.isPubliclyAccessible ? "secondary" : "outline"}>
-                        {item.isPubliclyAccessible ? "Sí" : "No"}
-                      </Badge>
+                      <Badge variant="outline">{item.isPubliclyAccessible ? "Sí" : "No"}</Badge>
                     </TableCell>
-                    <TableCell className="max-w-[240px] whitespace-normal">
+                    <TableCell className="whitespace-normal">
                       {isClassified ? (
                         <p className="line-clamp-2 text-sm text-muted-foreground">
                           {item.abstractSpanish}
@@ -176,7 +177,7 @@ export function EvidenceSection({
 
                   {isExpanded && (
                     <TableRow>
-                      <TableCell colSpan={COLUMN_COUNT} className="whitespace-normal bg-muted/30">
+                      <TableCell colSpan={COLUMN_COUNT} className="whitespace-normal">
                         <div className="flex flex-col gap-3 py-2">
                           <p className="text-sm font-medium">{item.title}</p>
 
@@ -208,22 +209,27 @@ export function EvidenceSection({
                           {isClassified ? (
                             <p className="text-sm whitespace-pre-wrap">{item.abstractSpanish}</p>
                           ) : (
-                            <p className="text-sm text-muted-foreground italic">
-                              {item.abstractOriginalLanguage
-                                ? "Sin clasificar: la clasificación automática falló y se guardó solo la metadata disponible."
-                                : "Sin clasificar: no se encontró abstract disponible."}
-                            </p>
+                            <Alert className="border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-200">
+                              <TriangleAlertIcon />
+                              <AlertTitle>Sin clasificar</AlertTitle>
+                              <AlertDescription className="text-amber-800 dark:text-amber-300">
+                                Puede que el artículo no tenga un abstract disponible.
+                              </AlertDescription>
+                            </Alert>
                           )}
 
                           {isClassified && (
                             <div className="flex flex-wrap gap-1.5">
                               {trueCriteria.length === 0 ? (
-                                <span className="text-xs text-muted-foreground">
-                                  No se marcó ningún criterio/subcriterio para este paper.
-                                </span>
+                                <Alert>
+                                  <InfoIcon />
+                                  <AlertDescription>
+                                    No se marcó ningún criterio/subcriterio para este artículo.
+                                  </AlertDescription>
+                                </Alert>
                               ) : (
                                 trueCriteria.map(({ field, label }) => (
-                                  <Badge key={field} variant="secondary">
+                                  <Badge key={field} variant="outline">
                                     {label}
                                   </Badge>
                                 ))

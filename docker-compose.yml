@@ -10,6 +10,43 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cucumar -d cucumar"]
+      interval: 2s
+      timeout: 5s
+      retries: 10
+
+  # Optional "everything in Docker" path — for someone who wants to run the
+  # app without installing Node/npm locally. Day-to-day development still
+  # uses `npm run dev` against this same postgres service (see README.md);
+  # `app`/`migrate` are not needed for that.
+  migrate:
+    build:
+      context: .
+      target: builder
+    env_file: .env
+    environment:
+      # Inside the Compose network, Postgres is reachable at its service
+      # name, not localhost — overrides whatever .env has for local dev.
+      DATABASE_URL: postgresql://cucumar:cucumar@postgres:5432/cucumar?schema=public
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: ["npx", "prisma", "migrate", "deploy"]
+    restart: "no"
+
+  app:
+    build:
+      context: .
+      target: runner
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://cucumar:cucumar@postgres:5432/cucumar?schema=public
+    ports:
+      - "3000:3000"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
 
 volumes:
   postgres_data:

@@ -1,7 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // Self-contained production build (only the files/node_modules actually
+  // needed at runtime) — what the Dockerfile's runtime stage copies.
+  output: "standalone",
 };
 
 export default nextConfig;

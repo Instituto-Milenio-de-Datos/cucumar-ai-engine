@@ -5,15 +5,22 @@ import { SpeciesClassificationForm } from "./species-classification-form";
 export const dynamic = "force-dynamic";
 
 export default async function NewConservationObjectPage() {
-  const seedSpecies = await prisma.seedSpecies.findMany({
-    orderBy: { commonName: "asc" },
-    select: { commonName: true, scientificName: true },
-  });
+  const [seedSpecies, classifiedObjects] = await Promise.all([
+    prisma.seedSpecies.findMany({
+      orderBy: { commonName: "asc" },
+      select: { commonName: true, scientificName: true },
+    }),
+    prisma.conservationObject.findMany({ select: { species: true } }),
+  ]);
 
-  const options = seedSpecies.map((species) => ({
-    value: species.scientificName,
-    label: species.commonName,
-  }));
+  const classifiedSpecies = new Set(classifiedObjects.map((object) => object.species));
+
+  const options = seedSpecies
+    .filter((species) => !classifiedSpecies.has(species.scientificName))
+    .map((species) => ({
+      value: species.scientificName,
+      label: species.commonName,
+    }));
 
   return (
     <div className="mx-auto flex w-full max-w-md flex-col gap-6">

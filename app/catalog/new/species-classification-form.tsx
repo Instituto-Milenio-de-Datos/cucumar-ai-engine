@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { CircleAlertIcon, Loader2Icon } from "lucide-react";
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -20,11 +21,16 @@ interface SpeciesOption {
   label: string; // commonName
 }
 
+interface SubmitError {
+  message: string;
+  existingId?: string;
+}
+
 export function SpeciesClassificationForm({ options }: { options: SpeciesOption[] }) {
   const router = useRouter();
   const [selected, setSelected] = useState<SpeciesOption | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<SubmitError | null>(null);
 
   async function handleSubmit() {
     if (!selected) return;
@@ -42,12 +48,18 @@ export function SpeciesClassificationForm({ options }: { options: SpeciesOption[
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error ?? `La solicitud falló con estado ${response.status}.`);
+        throw Object.assign(
+          new Error(data.error ?? `La solicitud falló con estado ${response.status}.`),
+          { existingId: data.existingId as string | undefined },
+        );
       }
 
       router.push(`/catalog/${data.id}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Ocurrió un error inesperado.");
+      setError({
+        message: err instanceof Error ? err.message : "Ocurrió un error inesperado.",
+        existingId: err instanceof Error ? (err as Error & { existingId?: string }).existingId : undefined,
+      });
       setIsSubmitting(false);
     }
   }
@@ -79,7 +91,17 @@ export function SpeciesClassificationForm({ options }: { options: SpeciesOption[
       {error && (
         <Alert variant="destructive">
           <CircleAlertIcon />
-          <AlertDescription>{error}</AlertDescription>
+          <AlertDescription>
+            {error.message}
+            {error.existingId && (
+              <>
+                {" "}
+                <Link href={`/catalog/${error.existingId}`} className="underline">
+                  Ver especie ya clasificada
+                </Link>
+              </>
+            )}
+          </AlertDescription>
         </Alert>
       )}
 

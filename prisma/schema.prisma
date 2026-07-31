@@ -37,7 +37,12 @@ model ConservationObject {
   genus   String // col I  "Genero"
   // Full scientific binomial (Genus + species), matching the source spreadsheet
   // and spec-original.md's own example ("Especie: Lontra felina"), not just the epithet.
-  species String // col J  "Especie"
+  // Unique: a species has one taxonomy, resolved the same way every time — a second
+  // ConservationObject for it would just split its evidence across two disconnected
+  // records, never a legitimate use case. app/api/classify-species is the one place
+  // that inserts here; it relies on this constraint, not just its own pre-check, to
+  // stay correct under a race (two concurrent requests for the same species).
+  species String @unique // col J  "Especie"
 
   inAnalysis       Boolean   @default(false)
   lastAnalysisDate DateTime?

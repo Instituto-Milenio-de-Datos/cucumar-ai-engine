@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@/lib/generated/prisma/client";
 import { resolveTaxonomy, TaxonomyResolutionError } from "@/lib/providers/taxonomy";
+
+const DUPLICATE_SPECIES_ERROR = "Esta especie ya fue clasificada.";
 
 // Fixed for the whole MVP (see spec-original.md section 1-2). Kept as a named
 // constant, not baked into the Prisma schema, so an admin UI can take over
@@ -32,6 +35,17 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  const existing = await prisma.conservationObject.findUnique({
+    where: { species: scientificName },
+    select: { id: true },
+  });
+  if (existing) {
+    return NextResponse.json(
+      { error: DUPLICATE_SPECIES_ERROR, existingId: existing.id },
+      { status: 409 },
+    );
+  }
+
   let taxonomy;
   try {
     taxonomy = await resolveTaxonomy(scientificName);
@@ -44,19 +58,37 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: message }, { status: 502 });
   }
 
-  const conservationObject = await prisma.conservationObject.create({
-    data: {
-      commonName: seedSpecies.commonName,
-      analysisCategory: DEFAULT_ANALYSIS_CATEGORY,
-      kingdom: taxonomy.kingdom,
-      phylum: taxonomy.phylum,
-      class: taxonomy.class,
-      order: taxonomy.order,
-      family: taxonomy.family,
-      genus: taxonomy.genus,
-      species: taxonomy.species,
-    },
-  });
+  let conservationObject;
+  try {
+    conservationObject = await prisma.conservationObject.create({
+      data: {
+        commonName: seedSpecies.commonName,
+        analysisCategory: DEFAULT_ANALYSIS_CATEGORY,
+        kingdom: taxonomy.kingdom,
+        phylum: taxonomy.phylum,
+        class: taxonomy.class,
+        order: taxonomy.order,
+        family: taxonomy.family,
+        genus: taxonomy.genus,
+        species: taxonomy.species,
+      },
+    });
+  } catch (error) {
+    // Race guard: two concurrent requests can both pass the findUnique check above
+    // before either commits. The DB unique constraint is the actual guarantee; this
+    // just turns its violation into the same clean response as the pre-check.
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      const raceExisting = await prisma.conservationObject.findUnique({
+        where: { species: taxonomy.species },
+        select: { id: true },
+      });
+      return NextResponse.json(
+        { error: DUPLICATE_SPECIES_ERROR, existingId: raceExisting?.id },
+        { status: 409 },
+      );
+    }
+    throw error;
+  }
 
   console.log(
     JSON.stringify({

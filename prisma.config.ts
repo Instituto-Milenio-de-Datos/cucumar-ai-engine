@@ -10,6 +10,11 @@ export default defineConfig({
     seed: "tsx prisma/seed.ts",
   },
   datasource: {
-    url: process.env["DATABASE_URL"],
+    // CLI operations (migrate, studio, db seed) want a direct connection, not
+    // Neon's pooler — migrations run session-level locks/DDL that a
+    // transaction-mode pooler doesn't support reliably. Runtime queries (see
+    // lib/prisma.ts) go through DATABASE_URL (pooled) instead; the fallback
+    // here means local dev (no pooler distinction) only needs DATABASE_URL set.
+    url: process.env["DATABASE_URL_UNPOOLED"] ?? process.env["DATABASE_URL"],
   },
 });
